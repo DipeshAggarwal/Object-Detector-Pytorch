@@ -191,5 +191,5 @@ plt.xlabel("Epoch #")
 plt.ylabel("Loss/Accuracy")
 plt.legend(loc="lower left")
 
-plotPath = os.path.sep.join([config.PLOTS_PATH, "training.png"])
-plt.savefig(plotPath)
+plot_path = os.path.sep.join([config.PLOTS_PATH, "training.png"])
+plt.savefig(plot_path)
