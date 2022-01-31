@@ -6,7 +6,7 @@ class CustomTensorDataset(Dataset):
         self.tensors = tensors
         self.transforms = transforms
         
-    def __getitems__(self, index):
+    def __getitem__(self, index):
         image = self.tensors[0][index]
         label = self.tensors[1][index]
         bbox = self.tensors[2][index]

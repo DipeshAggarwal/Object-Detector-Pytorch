@@ -108,6 +108,8 @@ bbox_loss_func = MSELoss()
 
 opt = Adam(obj_detector.parameters(), lr=config.INIT_LR)
 
+H = {"total_train_loss": [], "total_val_loss": [], "train_class_acc": [], "val_class_acc": []}
+
 info("Training the Network")
 start_time = time.time()
 
@@ -137,7 +139,7 @@ for e in tqdm(range(config.NUM_EPOCHS)):
         total_train_loss += total_loss
         train_correct += (predictions[1].argmax(1) == labels).type(torch.float).sum().item()
 
-    with torch.no_grad:
+    with torch.no_grad():
         obj_detector.eval()
         
         for images, labels, bboxes in test_loader:
@@ -156,4 +158,38 @@ for e in tqdm(range(config.NUM_EPOCHS)):
     avg_val_loss = total_val_loss / test_steps  
 
     train_correct = train_correct / len(train_ds)
-    val_correct = val_correct / len(test_ds)          
+    val_correct = val_correct / len(test_ds)
+    
+    H["total_train_loss"].append(avg_train_loss.cpu().detach().numpy())
+    H["train_class_acc"].append(train_correct)
+    H["total_val_loss"].append(avg_val_loss.cpu().detach().numpy())
+    H["val_class_acc"].append(val_correct)
+    
+    info("Epoch: {}/{}".format(e+1, config.NUM_EPOCHS))
+    print("Train Loss: {:.6f}, Train Accuracy: {:.4f}".format(avg_train_loss, train_correct))
+    print("Val Loss: {:.6f}, Val Accuracy: {:.4f}".format(avg_val_loss, val_correct))
+
+end_time = time.time()
+info("Total time to train the model: {:.2f}s".format(end_time-start_time))
+
+info("Saving Object Detector Model")
+torch.save(obj_detector, config.MODEL_PATH)
+
+info("Saving Label encoder")
+f = open(config.LE_PATH, "wb")
+f.write(pickle.dumps(le))
+f.close()
+
+plt.style.use("ggplot")
+plt.figure()
+plt.plot(H["total_train_loss"], label="Total Train Loss")
+plt.plot(H["total_val_loss"], label="Total Val Loss")
+plt.plot(H["train_class_acc"], label="Train Class Acc")
+plt.plot(H["val_class_acc"], label="Val Class Acc")
+plt.title("Total Training Loss and Classification Accuracy")
+plt.xlabel("Epoch #")
+plt.ylabel("Loss/Accuracy")
+plt.legend(loc="lower left")
+
+plotPath = os.path.sep.join([config.PLOTS_PATH, "training.png"])
+plt.savefig(plotPath)
